@@ -70,9 +70,9 @@ class Watcher {
         this.val = this.get();
     }
     update() {
-        this.run();
+        this.start();
     }
-    run() {
+    start() {
         let value = this.get(),
             oldVal = this.val;
         if (value === oldVal) return;
@@ -149,7 +149,7 @@ class Compile {
             if (this.isElementNode(node)) {
                 this.compile(node)
             } else if (this.isTextNode(node) && reg.test(text)) {
-                let exp = text.replace(/\{\{(.*)\}\}/g, '');
+                let exp = text.replace(/[\s]/g,'').replace(/[\{\}]/g, '');
                 this.compileText(node, exp);
             }
             if (node.childNodes && node.childNodes.length) {
@@ -182,7 +182,9 @@ class Compile {
 
 let command = {
     bind(node, vm, exp, name) {
+        
         let updateFn = update[`${name}Updater`];
+        // console.log(node, vm, exp, name)
         if (updateFn) {
             updateFn(node, this._getVmVal(vm, exp))
         }
@@ -260,20 +262,20 @@ class Captain {
         this._proxy(this._data, this);
         this._initComputed();
         observer(data);
-        new Compile(config.el || document.body, this);
+        new Compile(this.$config.el || document.body, this);
     }
 
     // 数据代理 把this.data.sth 转换为this.sth
-    _proxy(data, vm) {
+    _proxy(data) {
         Object.keys(data).forEach(key => {
-            Object.defineProperty(vm, key, {
+            Object.defineProperty(this, key, {
                 enumerable: true,
                 configurable: true,
                 get: () => {
-                    return vm._data[key]
+                    return this._data[key]
                 },
                 set: newVal => {
-                    vm._data[key] = newVal;
+                    this._data[key] = newVal;
                 }
             })
         })
